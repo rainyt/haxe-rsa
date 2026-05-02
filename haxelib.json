@@ -1,6 +1,6 @@
 {
     "name": "haxe-rsa",
-    "url": "https://github.com/Rainy/haxe-rsa",
+    "url": "https://github.com/rainyt/haxe-rsa",
     "license": "MIT",
     "tags": ["crypto", "rsa", "security", "encryption", "js", "nodejs", "jvm", "cross-platform"],
     "description": "跨平台 Haxe RSA 加密库，支持 JS（Node.js / 浏览器）、C++（hxcpp）和 Java（JVM）目标。提供 OAEP 加密和 RSASSA-PKCS1-v1_5 签名。",
