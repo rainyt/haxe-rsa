@@ -4,20 +4,23 @@ package haxe.ras.backend.jsbrowser;
 
 import haxe.io.Bytes;
 import haxe.crypto.Base64;
-import js.lib.Promise;
 import haxe.ras.KeyPair;
+import haxe.ras.IRSA;
+import haxe.ras.NativePromise;
 
 /**
  * RSA 浏览器后端 — 基于 Web Crypto API (SubtleCrypto)
  *
- * 浏览器环境所有密码学操作均为异步，方法统一使用 `*Async` 后缀。
+ * 浏览器环境所有密码学操作均为异步，同步方法调用会抛错。
  */
-class RSA {
+class RSA implements IRSA {
+
+	public function new() {}
 
 	// ---- 内部工具 ----
 
-	static var _subtle(get, never): Dynamic;
-	static function get__subtle(): Dynamic {
+	var _subtle(get, never): Dynamic;
+	function get__subtle(): Dynamic {
 		return js.Syntax.code("(window.crypto || window.msCrypto).subtle");
 	}
 
@@ -32,13 +35,39 @@ class RSA {
 		}
 	}
 
-	// ---- 密钥生成 ----
+	// ---- IRSA 同步方法（浏览器不支持）----
 
-	/**
-	 * 异步生成RSA密钥对
-	 * @param modulusLength 密钥长度（位），默认2048
-	 */
-	public static function generateKeyPairAsync(modulusLength: Int = 2048): Promise<KeyPair> {
+	public function generateKeyPair(modulusLength: Int = 2048): KeyPair {
+		throw "浏览器环境不支持同步操作，请使用 generateKeyPairAsync()。";
+	}
+
+	public function encrypt(data: Bytes, publicKey: String, oaepHash: String = "sha256"): Bytes {
+		throw "浏览器环境不支持同步操作，请使用 encryptAsync()。";
+	}
+
+	public function decrypt(data: Bytes, privateKey: String, oaepHash: String = "sha256"): Bytes {
+		throw "浏览器环境不支持同步操作，请使用 decryptAsync()。";
+	}
+
+	public function sign(data: Bytes, privateKey: String, algorithm: String = "sha256"): Bytes {
+		throw "浏览器环境不支持同步操作，请使用 signAsync()。";
+	}
+
+	public function verify(data: Bytes, signature: Bytes, publicKey: String, algorithm: String = "sha256"): Bool {
+		throw "浏览器环境不支持同步操作，请使用 verifyAsync()。";
+	}
+
+	public function encryptString(plaintext: String, publicKey: String, oaepHash: String = "sha256"): String {
+		throw "浏览器环境不支持同步操作，请使用 encryptStringAsync()。";
+	}
+
+	public function decryptString(ciphertext: String, privateKey: String, oaepHash: String = "sha256"): String {
+		throw "浏览器环境不支持同步操作，请使用 decryptStringAsync()。";
+	}
+
+	// ---- IRSA 异步方法 ----
+
+	public function generateKeyPairAsync(modulusLength: Int = 2048): NativePromise<KeyPair> {
 		var subtle = _subtle;
 		return cast subtle.generateKey(
 			{
@@ -47,12 +76,11 @@ class RSA {
 				publicExponent: js.Syntax.code("new Uint8Array([1, 0, 1])"),
 				hash: {name: "SHA-256"}
 			},
-			true, // extractable
+			true,
 			["encrypt", "decrypt"]
 		).then(function(keyPair: Dynamic): Dynamic {
 			return js.Syntax.code("Promise.all([{0}.exportKey('jwk', {1}.publicKey), {0}.exportKey('jwk', {1}.privateKey)])", subtle, keyPair);
 		}).then(function(jwks: Dynamic): KeyPair {
-			// 清除 JWK 中的 alg/key_ops，使密钥可用于签名和加密
 			inline function clean(jwk: Dynamic): Dynamic {
 				js.Syntax.code("delete {0}.alg", jwk);
 				js.Syntax.code("delete {0}.key_ops", jwk);
@@ -65,16 +93,8 @@ class RSA {
 		});
 	}
 
-	// ---- OAEP 加密/解密 ----
-
-	/**
-	 * 异步公钥加密 (OAEP填充)
-	 * @param data 明文数据
-	 * @param publicKeyJwk JWK格式公钥JSON
-	 * @param oaepHash OAEP哈希算法，默认"sha256"
-	 */
-	public static function encryptAsync(data: Bytes, publicKeyJwk: String,
-		oaepHash: String = "sha256"): Promise<Bytes> {
+	public function encryptAsync(data: Bytes, publicKeyJwk: String,
+			oaepHash: String = "sha256"): NativePromise<Bytes> {
 		var subtle = _subtle;
 		var jwk: Dynamic = untyped JSON.parse(publicKeyJwk);
 		var hash = _toWebHash(oaepHash);
@@ -87,14 +107,8 @@ class RSA {
 			});
 	}
 
-	/**
-	 * 异步私钥解密 (OAEP填充)
-	 * @param data 密文数据
-	 * @param privateKeyJwk JWK格式私钥JSON
-	 * @param oaepHash OAEP哈希算法，默认"sha256"
-	 */
-	public static function decryptAsync(data: Bytes, privateKeyJwk: String,
-		oaepHash: String = "sha256"): Promise<Bytes> {
+	public function decryptAsync(data: Bytes, privateKeyJwk: String,
+			oaepHash: String = "sha256"): NativePromise<Bytes> {
 		var subtle = _subtle;
 		var jwk: Dynamic = untyped JSON.parse(privateKeyJwk);
 		var hash = _toWebHash(oaepHash);
@@ -107,16 +121,8 @@ class RSA {
 			});
 	}
 
-	// ---- 签名/验签 ----
-
-	/**
-	 * 异步RSA签名 (RSASSA-PKCS1-v1_5)
-	 * @param data 待签名数据
-	 * @param privateKeyJwk JWK格式私钥JSON
-	 * @param algorithm 哈希算法，默认"sha256"
-	 */
-	public static function signAsync(data: Bytes, privateKeyJwk: String,
-		algorithm: String = "sha256"): Promise<Bytes> {
+	public function signAsync(data: Bytes, privateKeyJwk: String,
+			algorithm: String = "sha256"): NativePromise<Bytes> {
 		var subtle = _subtle;
 		var jwk: Dynamic = untyped JSON.parse(privateKeyJwk);
 		var hash = _toWebHash(algorithm);
@@ -130,15 +136,8 @@ class RSA {
 			});
 	}
 
-	/**
-	 * 异步RSA验签 (RSASSA-PKCS1-v1_5)
-	 * @param data 原始数据
-	 * @param signature 签名数据
-	 * @param publicKeyJwk JWK格式公钥JSON
-	 * @param algorithm 哈希算法，默认"sha256"
-	 */
-	public static function verifyAsync(data: Bytes, signature: Bytes, publicKeyJwk: String,
-		algorithm: String = "sha256"): Promise<Bool> {
+	public function verifyAsync(data: Bytes, signature: Bytes, publicKeyJwk: String,
+			algorithm: String = "sha256"): NativePromise<Bool> {
 		var subtle = _subtle;
 		var jwk: Dynamic = untyped JSON.parse(publicKeyJwk);
 		var hash = _toWebHash(algorithm);
@@ -149,32 +148,18 @@ class RSA {
 			});
 	}
 
-	// ---- 字符串便捷方法 ----
-
-	/**
-	 * 异步公钥加密字符串 (OAEP)
-	 * @param plaintext 明文字符串
-	 * @param publicKeyJwk JWK格式公钥JSON
-	 * @param oaepHash OAEP哈希算法，默认"sha256"
-	 */
-	public static function encryptStringAsync(plaintext: String, publicKeyJwk: String,
-		oaepHash: String = "sha256"): Promise<String> {
-		return encryptAsync(Bytes.ofString(plaintext), publicKeyJwk, oaepHash)
+	public function encryptStringAsync(plaintext: String, publicKeyJwk: String,
+			oaepHash: String = "sha256"): NativePromise<String> {
+		return cast encryptAsync(Bytes.ofString(plaintext), publicKeyJwk, oaepHash)
 			.then(function(encrypted: Bytes): String {
 				return Base64.encode(encrypted);
 			});
 	}
 
-	/**
-	 * 异步私钥解密字符串 (OAEP)
-	 * @param ciphertext Base64编码的密文
-	 * @param privateKeyJwk JWK格式私钥JSON
-	 * @param oaepHash OAEP哈希算法，默认"sha256"
-	 */
-	public static function decryptStringAsync(ciphertext: String, privateKeyJwk: String,
-		oaepHash: String = "sha256"): Promise<String> {
+	public function decryptStringAsync(ciphertext: String, privateKeyJwk: String,
+			oaepHash: String = "sha256"): NativePromise<String> {
 		var data = Base64.decode(ciphertext);
-		return decryptAsync(data, privateKeyJwk, oaepHash)
+		return cast decryptAsync(data, privateKeyJwk, oaepHash)
 			.then(function(decrypted: Bytes): String {
 				return decrypted.toString();
 			});

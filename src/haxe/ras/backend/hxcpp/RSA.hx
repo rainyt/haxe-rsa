@@ -3,6 +3,8 @@ package haxe.ras.backend.hxcpp;
 import haxe.io.Bytes;
 import haxe.crypto.Base64;
 import haxe.ras.KeyPair;
+import haxe.ras.IRSA;
+import haxe.ras.NativePromise;
 
 #if cpp
 
@@ -26,7 +28,7 @@ static const EVP_MD* _hxrsa_get_md(const char* hash) {
 	return EVP_sha256();
 }
 
-// ---- 密钥生成（结果暂存于静态变量） ----
+// ---- 密钥生成（结果暂存于静态变量）----
 
 static std::string _hxrsa_pub_pem;
 static std::string _hxrsa_priv_pem;
@@ -185,62 +187,81 @@ static bool _hxrsa_verify(::haxe::io::Bytes data, ::haxe::io::Bytes signature,
 </linker>
 ')
 
-class RSA {
+class RSA implements IRSA {
 
-	// ---- 密钥生成 ----
+	public function new() {}
 
-	/** 生成RSA密钥对 */
-	public static function generateKeyPair(modulusLength: Int = 2048): KeyPair {
+	// ---- 同步方法 ----
+
+	public function generateKeyPair(modulusLength: Int = 2048): KeyPair {
 		untyped __cpp__("_hxrsa_gen_key({0})", modulusLength);
 		var pubKey:String = untyped __cpp__("::String(_hxrsa_pub_pem.c_str(), _hxrsa_pub_pem.size())");
 		var privKey:String = untyped __cpp__("::String(_hxrsa_priv_pem.c_str(), _hxrsa_priv_pem.size())");
 		return {publicKey: pubKey, privateKey: privKey};
 	}
 
-	// ---- OAEP 加密/解密 ----
-
-	/** 公钥加密 (OAEP填充) */
-	public static function encrypt(data: Bytes, publicKeyPem: String,
+	public function encrypt(data: Bytes, publicKeyPem: String,
 			oaepHash: String = "sha256"): Bytes {
 		return cast untyped __cpp__("_hxrsa_encrypt({0}, {1}, {2})", data, publicKeyPem, oaepHash);
 	}
 
-	/** 私钥解密 (OAEP填充) */
-	public static function decrypt(data: Bytes, privateKeyPem: String,
+	public function decrypt(data: Bytes, privateKeyPem: String,
 			oaepHash: String = "sha256"): Bytes {
 		return cast untyped __cpp__("_hxrsa_decrypt({0}, {1}, {2})", data, privateKeyPem, oaepHash);
 	}
 
-	// ---- 签名/验签 ----
-
-	/** RSA签名 (RSASSA-PKCS1-v1_5) */
-	public static function sign(data: Bytes, privateKeyPem: String,
+	public function sign(data: Bytes, privateKeyPem: String,
 			algorithm: String = "sha256"): Bytes {
 		return cast untyped __cpp__("_hxrsa_sign({0}, {1}, {2})", data, privateKeyPem, algorithm);
 	}
 
-	/** RSA验签 */
-	public static function verify(data: Bytes, signature: Bytes, publicKeyPem: String,
+	public function verify(data: Bytes, signature: Bytes, publicKeyPem: String,
 			algorithm: String = "sha256"): Bool {
 		return untyped __cpp__("_hxrsa_verify({0}, {1}, {2}, {3})", data, signature, publicKeyPem, algorithm);
 	}
 
-	// ---- 字符串便捷方法 ----
-
-	/** 公钥加密字符串 (OAEP) — 返回base64密文 */
-	public static function encryptString(plaintext: String, publicKeyPem: String,
+	public function encryptString(plaintext: String, publicKeyPem: String,
 			oaepHash: String = "sha256"): String {
 		var data = Bytes.ofString(plaintext);
 		var encrypted = encrypt(data, publicKeyPem, oaepHash);
 		return Base64.encode(encrypted);
 	}
 
-	/** 私钥解密字符串 (OAEP) — 输入base64密文 */
-	public static function decryptString(ciphertext: String, privateKeyPem: String,
+	public function decryptString(ciphertext: String, privateKeyPem: String,
 			oaepHash: String = "sha256"): String {
 		var data = Base64.decode(ciphertext);
 		var decrypted = decrypt(data, privateKeyPem, oaepHash);
 		return decrypted.toString();
+	}
+
+	// ---- 异步方法（C++ 不支持）----
+
+	public function generateKeyPairAsync(modulusLength: Int = 2048): NativePromise<KeyPair> {
+		throw "C++ 目标不支持异步操作，请使用 generateKeyPair()。";
+	}
+
+	public function encryptAsync(data: Bytes, publicKey: String, oaepHash: String = "sha256"): NativePromise<Bytes> {
+		throw "C++ 目标不支持异步操作，请使用 encrypt()。";
+	}
+
+	public function decryptAsync(data: Bytes, privateKey: String, oaepHash: String = "sha256"): NativePromise<Bytes> {
+		throw "C++ 目标不支持异步操作，请使用 decrypt()。";
+	}
+
+	public function signAsync(data: Bytes, privateKey: String, algorithm: String = "sha256"): NativePromise<Bytes> {
+		throw "C++ 目标不支持异步操作，请使用 sign()。";
+	}
+
+	public function verifyAsync(data: Bytes, signature: Bytes, publicKey: String, algorithm: String = "sha256"): NativePromise<Bool> {
+		throw "C++ 目标不支持异步操作，请使用 verify()。";
+	}
+
+	public function encryptStringAsync(plaintext: String, publicKey: String, oaepHash: String = "sha256"): NativePromise<String> {
+		throw "C++ 目标不支持异步操作，请使用 encryptString()。";
+	}
+
+	public function decryptStringAsync(ciphertext: String, privateKey: String, oaepHash: String = "sha256"): NativePromise<String> {
+		throw "C++ 目标不支持异步操作，请使用 decryptString()。";
 	}
 }
 

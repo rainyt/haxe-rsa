@@ -8,8 +8,18 @@ import js.node.Buffer;
 import js.lib.Promise;
 import haxe.io.Bytes;
 import haxe.ras.KeyPair;
+import haxe.ras.IRSA;
+import haxe.ras.NativePromise;
 
-class RSA {
+/**
+ * RSA Node.js 后端 — 基于 Node.js crypto 模块
+ *
+ * 支持同步和异步全部操作，PEM 密钥格式。
+ */
+class RSA implements IRSA {
+
+	public function new() {}
+
 	/** PKCS#1 v1.5 填充常量 */
 	static var PKCS1_PADDING(get, never): Int;
 	static function get_PKCS1_PADDING() return Constants.RSA_PKCS1_PADDING;
@@ -18,7 +28,7 @@ class RSA {
 	static var OAEP_PADDING(get, never): Int;
 	static function get_OAEP_PADDING() return Constants.RSA_PKCS1_OAEP_PADDING;
 
-	// ---- 密钥生成 ----
+	// ---- 静态工具方法（供外部直接调用，保持向后兼容）----
 
 	/** 同步生成RSA密钥对 */
 	public static function generateKeyPairSync(modulusLength: Int = 2048,
@@ -32,32 +42,14 @@ class RSA {
 		return {publicKey: result.publicKey, privateKey: result.privateKey};
 	}
 
-	/** 异步生成RSA密钥对 */
-	public static function generateKeyPair(modulusLength: Int = 2048,
-		publicExponent: Int = 65537): Promise<KeyPair> {
-		return new Promise((resolve, reject) -> {
-			js.Syntax.code("require('crypto').generateKeyPair('rsa', {0}, {1})", {
-				modulusLength: modulusLength,
-				publicExponent: publicExponent,
-				publicKeyEncoding: {type: "spki", format: "pem"},
-				privateKeyEncoding: {type: "pkcs8", format: "pem"}
-			}, (err, publicKey, privateKey) -> {
-				if (err != null) reject(err)
-				else resolve({publicKey: publicKey, privateKey: privateKey});
-			});
-		});
-	}
-
-	// ---- OAEP 加密/解密 ----
-
-	/** 公钥加密 (OAEP填充) */
+	/** 公钥加密 (OAEP填充) — Buffer 版本 */
 	public static function publicEncrypt(data: Buffer, publicKeyPem: String,
 		oaepHash: String = "sha256"): Buffer {
 		return untyped Crypto.publicEncrypt(
 			{key: publicKeyPem, padding: OAEP_PADDING, oaepHash: oaepHash}, data);
 	}
 
-	/** 私钥解密 (OAEP填充) */
+	/** 私钥解密 (OAEP填充) — Buffer 版本 */
 	public static function privateDecrypt(data: Buffer, privateKeyPem: String,
 		oaepHash: String = "sha256"): Buffer {
 		return untyped Crypto.privateDecrypt(
@@ -74,92 +66,108 @@ class RSA {
 		return Crypto.publicDecrypt(cast {key: publicKeyPem, padding: PKCS1_PADDING}, data);
 	}
 
-	// ---- 签名/验签 ----
-
-	/** RSA签名 */
-	public static function sign(data: Buffer, privateKeyPem: String,
+	/** RSA签名 — Buffer 版本 */
+	public static function signBuffer(data: Buffer, privateKeyPem: String,
 		algorithm: String = "sha256"): Buffer {
 		var signer = Crypto.createSign("RSA-" + algorithm.toUpperCase());
 		signer.update(data);
 		return signer.sign(privateKeyPem);
 	}
 
-	/** RSA验签 */
-	public static function verify(data: Buffer, signature: Buffer, publicKeyPem: String,
+	/** RSA验签 — Buffer 版本 */
+	public static function verifyBuffer(data: Buffer, signature: Buffer, publicKeyPem: String,
 		algorithm: String = "sha256"): Bool {
 		var verifier = Crypto.createVerify("RSA-" + algorithm.toUpperCase());
 		verifier.update(data);
 		return verifier.verify(publicKeyPem, signature);
 	}
 
-	// ---- 字符串便捷方法 ----
+	// ---- IRSA 同步实例方法 ----
 
-	/** 公钥加密字符串 (OAEP) — 返回base64密文 */
-	public static function encryptString(plaintext: String, publicKeyPem: String,
-		oaepHash: String = "sha256", inputEncoding: String = "utf8",
-		outputEncoding: String = "base64"): String {
-		var encrypted = publicEncrypt(Buffer.from(plaintext, inputEncoding), publicKeyPem, oaepHash);
-		return encrypted.toString(outputEncoding);
+	public function generateKeyPair(modulusLength: Int = 2048): KeyPair {
+		return generateKeyPairSync(modulusLength);
 	}
 
-	/** 私钥解密字符串 (OAEP) — 输入base64密文 */
-	public static function decryptString(ciphertext: String, privateKeyPem: String,
-		oaepHash: String = "sha256", inputEncoding: String = "base64",
-		outputEncoding: String = "utf8"): String {
-		var decrypted = privateDecrypt(Buffer.from(ciphertext, inputEncoding), privateKeyPem, oaepHash);
-		return decrypted.toString(outputEncoding);
-	}
-
-	// ---- 跨平台异步接口 (*Async) ----
-
-	/** 异步生成RSA密钥对（generateKeyPair 别名） */
-	public static function generateKeyPairAsync(modulusLength: Int = 2048,
-		publicExponent: Int = 65537): Promise<KeyPair> {
-		return generateKeyPair(modulusLength, publicExponent);
-	}
-
-	/** 异步公钥加密 Bytes (OAEP) */
-	public static function encryptAsync(data: Bytes, publicKeyPem: String,
-		oaepHash: String = "sha256"): Promise<Bytes> {
+	public function encrypt(data: Bytes, publicKey: String, oaepHash: String = "sha256"): Bytes {
 		var buf = Buffer.from(data.getData());
-		var result = publicEncrypt(buf, publicKeyPem, oaepHash);
-		return Promise.resolve(Bytes.ofData(cast result.buffer));
+		var result = publicEncrypt(buf, publicKey, oaepHash);
+		return Bytes.ofData(cast result.buffer);
 	}
 
-	/** 异步私钥解密 Bytes (OAEP) */
-	public static function decryptAsync(data: Bytes, privateKeyPem: String,
-		oaepHash: String = "sha256"): Promise<Bytes> {
+	public function decrypt(data: Bytes, privateKey: String, oaepHash: String = "sha256"): Bytes {
 		var buf = Buffer.from(data.getData());
-		var result = privateDecrypt(buf, privateKeyPem, oaepHash);
-		return Promise.resolve(Bytes.ofData(cast result.buffer));
+		var result = privateDecrypt(buf, privateKey, oaepHash);
+		return Bytes.ofData(cast result.buffer);
 	}
 
-	/** 异步RSA签名 (RSASSA-PKCS1-v1_5) */
-	public static function signAsync(data: Bytes, privateKeyPem: String,
-		algorithm: String = "sha256"): Promise<Bytes> {
+	public function sign(data: Bytes, privateKey: String, algorithm: String = "sha256"): Bytes {
 		var buf = Buffer.from(data.getData());
-		var result = sign(buf, privateKeyPem, algorithm);
-		return Promise.resolve(Bytes.ofData(cast result.buffer));
+		var result = signBuffer(buf, privateKey, algorithm);
+		return Bytes.ofData(cast result.buffer);
 	}
 
-	/** 异步RSA验签 (RSASSA-PKCS1-v1_5) */
-	public static function verifyAsync(data: Bytes, signature: Bytes, publicKeyPem: String,
-		algorithm: String = "sha256"): Promise<Bool> {
+	public function verify(data: Bytes, signature: Bytes, publicKey: String, algorithm: String = "sha256"): Bool {
 		var dataBuf = Buffer.from(data.getData());
 		var sigBuf = Buffer.from(signature.getData());
-		return Promise.resolve(verify(dataBuf, sigBuf, publicKeyPem, algorithm));
+		return verifyBuffer(dataBuf, sigBuf, publicKey, algorithm);
 	}
 
-	/** 异步公钥加密字符串 (OAEP) — 返回base64密文 */
-	public static function encryptStringAsync(plaintext: String, publicKeyPem: String,
-		oaepHash: String = "sha256"): Promise<String> {
-		return Promise.resolve(encryptString(plaintext, publicKeyPem, oaepHash));
+	public function encryptString(plaintext: String, publicKey: String, oaepHash: String = "sha256"): String {
+		var encrypted = publicEncrypt(Buffer.from(plaintext, "utf8"), publicKey, oaepHash);
+		return encrypted.toString("base64");
 	}
 
-	/** 异步私钥解密字符串 (OAEP) — 输入base64密文 */
-	public static function decryptStringAsync(ciphertext: String, privateKeyPem: String,
-		oaepHash: String = "sha256"): Promise<String> {
-		return Promise.resolve(decryptString(ciphertext, privateKeyPem, oaepHash));
+	public function decryptString(ciphertext: String, privateKey: String, oaepHash: String = "sha256"): String {
+		var decrypted = privateDecrypt(Buffer.from(ciphertext, "base64"), privateKey, oaepHash);
+		return decrypted.toString("utf8");
+	}
+
+	// ---- IRSA 异步实例方法 ----
+
+	public function generateKeyPairAsync(modulusLength: Int = 2048): NativePromise<KeyPair> {
+		return cast new Promise((resolve, reject) -> {
+			js.Syntax.code("require('crypto').generateKeyPair('rsa', {0}, {1})", {
+				modulusLength: modulusLength,
+				publicExponent: 65537,
+				publicKeyEncoding: {type: "spki", format: "pem"},
+				privateKeyEncoding: {type: "pkcs8", format: "pem"}
+			}, (err, publicKey, privateKey) -> {
+				if (err != null) reject(err)
+				else resolve({publicKey: publicKey, privateKey: privateKey});
+			});
+		});
+	}
+
+	public function encryptAsync(data: Bytes, publicKey: String, oaepHash: String = "sha256"): NativePromise<Bytes> {
+		var buf = Buffer.from(data.getData());
+		var result = publicEncrypt(buf, publicKey, oaepHash);
+		return cast Promise.resolve(Bytes.ofData(cast result.buffer));
+	}
+
+	public function decryptAsync(data: Bytes, privateKey: String, oaepHash: String = "sha256"): NativePromise<Bytes> {
+		var buf = Buffer.from(data.getData());
+		var result = privateDecrypt(buf, privateKey, oaepHash);
+		return cast Promise.resolve(Bytes.ofData(cast result.buffer));
+	}
+
+	public function signAsync(data: Bytes, privateKey: String, algorithm: String = "sha256"): NativePromise<Bytes> {
+		var buf = Buffer.from(data.getData());
+		var result = signBuffer(buf, privateKey, algorithm);
+		return cast Promise.resolve(Bytes.ofData(cast result.buffer));
+	}
+
+	public function verifyAsync(data: Bytes, signature: Bytes, publicKey: String, algorithm: String = "sha256"): NativePromise<Bool> {
+		var dataBuf = Buffer.from(data.getData());
+		var sigBuf = Buffer.from(signature.getData());
+		return cast Promise.resolve(verifyBuffer(dataBuf, sigBuf, publicKey, algorithm));
+	}
+
+	public function encryptStringAsync(plaintext: String, publicKey: String, oaepHash: String = "sha256"): NativePromise<String> {
+		return cast Promise.resolve(encryptString(plaintext, publicKey, oaepHash));
+	}
+
+	public function decryptStringAsync(ciphertext: String, privateKey: String, oaepHash: String = "sha256"): NativePromise<String> {
+		return cast Promise.resolve(decryptString(ciphertext, privateKey, oaepHash));
 	}
 }
 

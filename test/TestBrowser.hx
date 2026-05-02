@@ -6,8 +6,18 @@ class TestBrowser {
 	static function main() {
 		trace("=== haxe-ras 浏览器测试 ===");
 
+		var rsa = new RSA();
+
+		// 测试同步方法抛错
+		try {
+			rsa.generateKeyPair(2048);
+			trace("[FAIL] 同步方法应该抛错但未抛出!");
+		} catch (e: Dynamic) {
+			trace("[OK] 同步方法正确抛错: " + e);
+		}
+
 		// 测试密钥生成
-		RSA.generateKeyPairAsync(2048).then(function(keyPair: KeyPair) {
+		rsa.generateKeyPairAsync(2048).then(function(keyPair: KeyPair) {
 			trace("[OK] 密钥生成成功");
 			trace('  JWK公钥: ${keyPair.publicKey.substring(0, 60)}...');
 			trace('  JWK私钥: ${keyPair.privateKey.substring(0, 60)}...');
@@ -15,9 +25,9 @@ class TestBrowser {
 			var plainText = "Hello, haxe-ras! 浏览器RSA测试。";
 
 			// 测试加密/解密 (OAEP)
-			return RSA.encryptStringAsync(plainText, keyPair.publicKey).then(function(encrypted: String) {
+			return rsa.encryptStringAsync(plainText, keyPair.publicKey).then(function(encrypted: String) {
 				trace('[OK] 加密成功: ${encrypted.substring(0, 40)}...');
-				return RSA.decryptStringAsync(encrypted, keyPair.privateKey).then(function(decrypted: String) {
+				return rsa.decryptStringAsync(encrypted, keyPair.privateKey).then(function(decrypted: String) {
 					if (decrypted == plainText) {
 						trace("[OK] 解密验证通过 (OAEP)");
 					} else {
@@ -28,8 +38,8 @@ class TestBrowser {
 
 					// 测试 Bytes 级别加密/解密
 					var dataBytes = Bytes.ofString(plainText);
-					return RSA.encryptAsync(dataBytes, keyPair.publicKey).then(function(encryptedBytes: Bytes) {
-						return RSA.decryptAsync(encryptedBytes, keyPair.privateKey).then(function(decryptedBytes: Bytes) {
+					return rsa.encryptAsync(dataBytes, keyPair.publicKey).then(function(encryptedBytes: Bytes) {
+						return rsa.decryptAsync(encryptedBytes, keyPair.privateKey).then(function(decryptedBytes: Bytes) {
 							if (decryptedBytes.toString() == plainText) {
 								trace("[OK] Bytes加密/解密验证通过");
 							} else {
@@ -37,8 +47,8 @@ class TestBrowser {
 							}
 
 							// 测试签名/验签
-							return RSA.signAsync(dataBytes, keyPair.privateKey).then(function(signature: Bytes) {
-								return RSA.verifyAsync(dataBytes, signature, keyPair.publicKey).then(function(verified: Bool) {
+							return rsa.signAsync(dataBytes, keyPair.privateKey).then(function(signature: Bytes) {
+								return rsa.verifyAsync(dataBytes, signature, keyPair.publicKey).then(function(verified: Bool) {
 									if (verified) {
 										trace("[OK] 签名/验签验证通过");
 									} else {
@@ -46,8 +56,8 @@ class TestBrowser {
 									}
 
 									// 测试不同哈希算法
-									return RSA.signAsync(dataBytes, keyPair.privateKey, "sha512").then(function(sigSha512: Bytes) {
-										return RSA.verifyAsync(dataBytes, sigSha512, keyPair.publicKey, "sha512").then(function(verifySha512: Bool) {
+									return rsa.signAsync(dataBytes, keyPair.privateKey, "sha512").then(function(sigSha512: Bytes) {
+										return rsa.verifyAsync(dataBytes, sigSha512, keyPair.publicKey, "sha512").then(function(verifySha512: Bool) {
 											if (verifySha512) {
 												trace("[OK] SHA512签名/验签通过");
 											} else {
