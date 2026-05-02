@@ -64,53 +64,13 @@ class TestBrowser {
 												trace("[FAIL] SHA512签名/验签失败!");
 											}
 
-											// ---- 固定密钥跨平台验证 ----
-											trace("--- 固定密钥测试（JWK 格式，验证跨后端一致性） ---");
-
-											var sharedPlain = "跨平台共享密钥测试 - Cross-platform shared key test";
-											return rsa.encryptStringAsync(sharedPlain, TestKeys.publicKeyJwk).then(function(sharedEncrypted: String) {
-												return rsa.decryptStringAsync(sharedEncrypted, TestKeys.privateKeyJwk).then(function(sharedDecrypted: String) {
-													if (sharedDecrypted == sharedPlain) {
-														trace("[OK] 固定密钥解密验证通过 (OAEP)");
-													} else {
-														trace("[FAIL] 固定密钥解密结果不匹配!");
-													}
-
-													// 固定密钥 - Bytes 级别
-													var sharedData = Bytes.ofString(sharedPlain);
-													return rsa.encryptAsync(sharedData, TestKeys.publicKeyJwk).then(function(sharedEncBytes: Bytes) {
-														return rsa.decryptAsync(sharedEncBytes, TestKeys.privateKeyJwk).then(function(sharedDecBytes: Bytes) {
-															if (sharedDecBytes.toString() == sharedPlain) {
-																trace("[OK] 固定密钥 Bytes 加密/解密验证通过");
-															} else {
-																trace("[FAIL] 固定密钥 Bytes 加密/解密失败!");
-															}
-
-															// 固定密钥 - 签名/验签
-															return rsa.signAsync(sharedData, TestKeys.privateKeyJwk).then(function(sharedSig: Bytes) {
-																return rsa.verifyAsync(sharedData, sharedSig, TestKeys.publicKeyJwk).then(function(sharedVerified: Bool) {
-																	if (sharedVerified) {
-																		trace("[OK] 固定密钥签名/验签验证通过");
-																	} else {
-																		trace("[FAIL] 固定密钥验签失败!");
-																	}
-
-																	// 固定密钥 - SHA-512 签名
-																	return rsa.signAsync(sharedData, TestKeys.privateKeyJwk, "sha512").then(function(sharedSig512: Bytes) {
-																		return rsa.verifyAsync(sharedData, sharedSig512, TestKeys.publicKeyJwk, "sha512").then(function(sharedVerify512: Bool) {
-																			if (sharedVerify512) {
-																				trace("[OK] 固定密钥 SHA512 签名/验签通过");
-																			} else {
-																				trace("[FAIL] 固定密钥 SHA512 签名/验签失败!");
-																			}
-
-																			trace("=== 测试完成 ===");
-																		});
-																	});
-																});
-															});
-														});
-													});
+											// ---- 固定密钥跨平台验证 (JWK) ----
+											trace("--- 固定密钥测试（JWK 格式） ---");
+											testSharedKeys(rsa, TestKeys.keyPairJwk, function() {
+												// ---- 固定密钥跨平台验证 (PEM) ----
+												trace("--- 固定密钥测试（PEM 格式，自动识别） ---");
+												testSharedKeys(rsa, TestKeys.keyPairPem, function() {
+													trace("=== 测试完成 ===");
 												});
 											});
 										});
@@ -123,6 +83,52 @@ class TestBrowser {
 			});
 		}).catchError(function(err: Dynamic) {
 			trace('[ERROR] ${err}');
+		});
+	}
+
+	/** 固定密钥验证（加密/解密 + 签名/验签 + SHA-512） */
+	static function testSharedKeys(rsa: RSA, keyPair: KeyPair, done: () -> Void) {
+		var sharedPlain = "跨平台共享密钥测试 - Cross-platform shared key test";
+		return rsa.encryptStringAsync(sharedPlain, keyPair.publicKey).then(function(sharedEncrypted: String) {
+			return rsa.decryptStringAsync(sharedEncrypted, keyPair.privateKey).then(function(sharedDecrypted: String) {
+				if (sharedDecrypted == sharedPlain) {
+					trace("[OK] 固定密钥解密验证通过 (OAEP)");
+				} else {
+					trace("[FAIL] 固定密钥解密结果不匹配!");
+				}
+
+				var sharedData = Bytes.ofString(sharedPlain);
+				return rsa.encryptAsync(sharedData, keyPair.publicKey).then(function(sharedEncBytes: Bytes) {
+					return rsa.decryptAsync(sharedEncBytes, keyPair.privateKey).then(function(sharedDecBytes: Bytes) {
+						if (sharedDecBytes.toString() == sharedPlain) {
+							trace("[OK] 固定密钥 Bytes 加密/解密验证通过");
+						} else {
+							trace("[FAIL] 固定密钥 Bytes 加密/解密失败!");
+						}
+
+						return rsa.signAsync(sharedData, keyPair.privateKey).then(function(sharedSig: Bytes) {
+							return rsa.verifyAsync(sharedData, sharedSig, keyPair.publicKey).then(function(sharedVerified: Bool) {
+								if (sharedVerified) {
+									trace("[OK] 固定密钥签名/验签验证通过");
+								} else {
+									trace("[FAIL] 固定密钥验签失败!");
+								}
+
+								return rsa.signAsync(sharedData, keyPair.privateKey, "sha512").then(function(sharedSig512: Bytes) {
+									return rsa.verifyAsync(sharedData, sharedSig512, keyPair.publicKey, "sha512").then(function(sharedVerify512: Bool) {
+										if (sharedVerify512) {
+											trace("[OK] 固定密钥 SHA512 签名/验签通过");
+										} else {
+											trace("[FAIL] 固定密钥 SHA512 签名/验签失败!");
+										}
+										done();
+									});
+								});
+							});
+						});
+					});
+				});
+			});
 		});
 	}
 }
