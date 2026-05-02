@@ -24,4 +24,19 @@ jobs:
         run: haxelib dev haxe-rsa .
 
       - name: 测试密钥生成
-        run: haxelib run haxe-rsa create
+        run: |
+          OUTPUT=$(haxelib run haxe-rsa create)
+          echo "$OUTPUT"
+
+          # 校验输出包含 PEM 格式标记
+          if ! echo "$OUTPUT" | grep -q "BEGIN PUBLIC KEY"; then
+            echo "错误: 输出中未找到公钥 PEM 头"
+            exit 1
+          fi
+          if ! echo "$OUTPUT" | grep -q "BEGIN PRIVATE KEY"; then
+            echo "错误: 输出中未找到私钥 PEM 头"
+            exit 1
+          fi
+
+          echo ""
+          echo "密钥生成测试通过"
