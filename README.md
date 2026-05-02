@@ -1,4 +1,4 @@
-# haxe-ras
+# haxe-rsa
 
 Haxe 跨平台 RSA 加密库 — 提供 OAEP 加密/解密与 RSASSA-PKCS1-v1_5 签名/验签。
 
