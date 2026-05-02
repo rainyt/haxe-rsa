@@ -1,0 +1,4 @@
+# haxe-ras 编译配置 (Java/JVM 目标)
+-cp src
+--jvm bin/jvm/haxe-ras.jar
+--macro include("haxe.ras", true)

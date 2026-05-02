@@ -1,0 +1,6 @@
+# haxe-ras 测试配置 (Java/JVM 目标)
+-cp src
+-cp test
+--jvm bin/test/jvm/Main.jar
+-main TestJvm
+-cmd java -jar bin/test/jvm/Main.jar

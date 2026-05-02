@@ -1,6 +1,6 @@
 package haxe.ras;
 
-#if (cpp || sys)
+#if (cpp || sys || jvm)
 
 /**
  * 非 JS 平台的简易 Promise 实现
