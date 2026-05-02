@@ -1,0 +1,6 @@
+# haxe-ras 编译配置 (Node.js 目标)
+-cp src
+-lib hxnodejs
+-D nodejs
+-js bin/ras.js
+--macro include("haxe.ras", true)

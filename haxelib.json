@@ -1,0 +1,14 @@
+{
+    "name": "haxe-ras",
+    "url": "https://github.com/Rainy/haxe-ras",
+    "license": "MIT",
+    "tags": ["crypto", "rsa", "security", "encryption", "js", "nodejs", "cross-platform"],
+    "description": "RSA加密库的Haxe跨平台实现",
+    "version": "0.1.0",
+    "releasenote": "首个版本，支持JS/Node.js目标",
+    "contributors": ["Rainy"],
+    "classPath": "src",
+    "dependencies": {
+        "hxnodejs": "12.2.0"
+    }
+}
