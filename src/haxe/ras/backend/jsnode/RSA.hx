@@ -6,6 +6,7 @@ import js.node.Crypto;
 import js.node.Constants;
 import js.node.Buffer;
 import js.lib.Promise;
+import haxe.io.Bytes;
 import haxe.ras.KeyPair;
 
 class RSA {
@@ -107,6 +108,58 @@ class RSA {
 		outputEncoding: String = "utf8"): String {
 		var decrypted = privateDecrypt(Buffer.from(ciphertext, inputEncoding), privateKeyPem, oaepHash);
 		return decrypted.toString(outputEncoding);
+	}
+
+	// ---- 跨平台异步接口 (*Async) ----
+
+	/** 异步生成RSA密钥对（generateKeyPair 别名） */
+	public static function generateKeyPairAsync(modulusLength: Int = 2048,
+		publicExponent: Int = 65537): Promise<KeyPair> {
+		return generateKeyPair(modulusLength, publicExponent);
+	}
+
+	/** 异步公钥加密 Bytes (OAEP) */
+	public static function encryptAsync(data: Bytes, publicKeyPem: String,
+		oaepHash: String = "sha256"): Promise<Bytes> {
+		var buf = Buffer.from(data.getData());
+		var result = publicEncrypt(buf, publicKeyPem, oaepHash);
+		return Promise.resolve(Bytes.ofData(cast result.buffer));
+	}
+
+	/** 异步私钥解密 Bytes (OAEP) */
+	public static function decryptAsync(data: Bytes, privateKeyPem: String,
+		oaepHash: String = "sha256"): Promise<Bytes> {
+		var buf = Buffer.from(data.getData());
+		var result = privateDecrypt(buf, privateKeyPem, oaepHash);
+		return Promise.resolve(Bytes.ofData(cast result.buffer));
+	}
+
+	/** 异步RSA签名 (RSASSA-PKCS1-v1_5) */
+	public static function signAsync(data: Bytes, privateKeyPem: String,
+		algorithm: String = "sha256"): Promise<Bytes> {
+		var buf = Buffer.from(data.getData());
+		var result = sign(buf, privateKeyPem, algorithm);
+		return Promise.resolve(Bytes.ofData(cast result.buffer));
+	}
+
+	/** 异步RSA验签 (RSASSA-PKCS1-v1_5) */
+	public static function verifyAsync(data: Bytes, signature: Bytes, publicKeyPem: String,
+		algorithm: String = "sha256"): Promise<Bool> {
+		var dataBuf = Buffer.from(data.getData());
+		var sigBuf = Buffer.from(signature.getData());
+		return Promise.resolve(verify(dataBuf, sigBuf, publicKeyPem, algorithm));
+	}
+
+	/** 异步公钥加密字符串 (OAEP) — 返回base64密文 */
+	public static function encryptStringAsync(plaintext: String, publicKeyPem: String,
+		oaepHash: String = "sha256"): Promise<String> {
+		return Promise.resolve(encryptString(plaintext, publicKeyPem, oaepHash));
+	}
+
+	/** 异步私钥解密字符串 (OAEP) — 输入base64密文 */
+	public static function decryptStringAsync(ciphertext: String, privateKeyPem: String,
+		oaepHash: String = "sha256"): Promise<String> {
+		return Promise.resolve(decryptString(ciphertext, privateKeyPem, oaepHash));
 	}
 }
 

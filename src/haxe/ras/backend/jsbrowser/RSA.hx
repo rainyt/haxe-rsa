@@ -7,6 +7,11 @@ import haxe.crypto.Base64;
 import js.lib.Promise;
 import haxe.ras.KeyPair;
 
+/**
+ * RSA 浏览器后端 — 基于 Web Crypto API (SubtleCrypto)
+ *
+ * 浏览器环境所有密码学操作均为异步，方法统一使用 `*Async` 后缀。
+ */
 class RSA {
 
 	// ---- 内部工具 ----
@@ -30,10 +35,10 @@ class RSA {
 	// ---- 密钥生成 ----
 
 	/**
-	 * 生成RSA密钥对（异步）
+	 * 异步生成RSA密钥对
 	 * @param modulusLength 密钥长度（位），默认2048
 	 */
-	public static function generateKeyPair(modulusLength: Int = 2048): Promise<KeyPair> {
+	public static function generateKeyPairAsync(modulusLength: Int = 2048): Promise<KeyPair> {
 		var subtle = _subtle;
 		return cast subtle.generateKey(
 			{
@@ -63,12 +68,12 @@ class RSA {
 	// ---- OAEP 加密/解密 ----
 
 	/**
-	 * 公钥加密 (OAEP填充)
+	 * 异步公钥加密 (OAEP填充)
 	 * @param data 明文数据
 	 * @param publicKeyJwk JWK格式公钥JSON
 	 * @param oaepHash OAEP哈希算法，默认"sha256"
 	 */
-	public static function encrypt(data: Bytes, publicKeyJwk: String,
+	public static function encryptAsync(data: Bytes, publicKeyJwk: String,
 		oaepHash: String = "sha256"): Promise<Bytes> {
 		var subtle = _subtle;
 		var jwk: Dynamic = untyped JSON.parse(publicKeyJwk);
@@ -83,12 +88,12 @@ class RSA {
 	}
 
 	/**
-	 * 私钥解密 (OAEP填充)
+	 * 异步私钥解密 (OAEP填充)
 	 * @param data 密文数据
 	 * @param privateKeyJwk JWK格式私钥JSON
 	 * @param oaepHash OAEP哈希算法，默认"sha256"
 	 */
-	public static function decrypt(data: Bytes, privateKeyJwk: String,
+	public static function decryptAsync(data: Bytes, privateKeyJwk: String,
 		oaepHash: String = "sha256"): Promise<Bytes> {
 		var subtle = _subtle;
 		var jwk: Dynamic = untyped JSON.parse(privateKeyJwk);
@@ -105,12 +110,12 @@ class RSA {
 	// ---- 签名/验签 ----
 
 	/**
-	 * RSA签名 (RSASSA-PKCS1-v1_5)
+	 * 异步RSA签名 (RSASSA-PKCS1-v1_5)
 	 * @param data 待签名数据
 	 * @param privateKeyJwk JWK格式私钥JSON
 	 * @param algorithm 哈希算法，默认"sha256"
 	 */
-	public static function sign(data: Bytes, privateKeyJwk: String,
+	public static function signAsync(data: Bytes, privateKeyJwk: String,
 		algorithm: String = "sha256"): Promise<Bytes> {
 		var subtle = _subtle;
 		var jwk: Dynamic = untyped JSON.parse(privateKeyJwk);
@@ -126,13 +131,13 @@ class RSA {
 	}
 
 	/**
-	 * RSA验签 (RSASSA-PKCS1-v1_5)
+	 * 异步RSA验签 (RSASSA-PKCS1-v1_5)
 	 * @param data 原始数据
 	 * @param signature 签名数据
 	 * @param publicKeyJwk JWK格式公钥JSON
 	 * @param algorithm 哈希算法，默认"sha256"
 	 */
-	public static function verify(data: Bytes, signature: Bytes, publicKeyJwk: String,
+	public static function verifyAsync(data: Bytes, signature: Bytes, publicKeyJwk: String,
 		algorithm: String = "sha256"): Promise<Bool> {
 		var subtle = _subtle;
 		var jwk: Dynamic = untyped JSON.parse(publicKeyJwk);
@@ -147,29 +152,29 @@ class RSA {
 	// ---- 字符串便捷方法 ----
 
 	/**
-	 * 公钥加密字符串 (OAEP)
+	 * 异步公钥加密字符串 (OAEP)
 	 * @param plaintext 明文字符串
 	 * @param publicKeyJwk JWK格式公钥JSON
 	 * @param oaepHash OAEP哈希算法，默认"sha256"
 	 */
-	public static function encryptString(plaintext: String, publicKeyJwk: String,
+	public static function encryptStringAsync(plaintext: String, publicKeyJwk: String,
 		oaepHash: String = "sha256"): Promise<String> {
-		return encrypt(Bytes.ofString(plaintext), publicKeyJwk, oaepHash)
+		return encryptAsync(Bytes.ofString(plaintext), publicKeyJwk, oaepHash)
 			.then(function(encrypted: Bytes): String {
 				return Base64.encode(encrypted);
 			});
 	}
 
 	/**
-	 * 私钥解密字符串 (OAEP)
+	 * 异步私钥解密字符串 (OAEP)
 	 * @param ciphertext Base64编码的密文
 	 * @param privateKeyJwk JWK格式私钥JSON
 	 * @param oaepHash OAEP哈希算法，默认"sha256"
 	 */
-	public static function decryptString(ciphertext: String, privateKeyJwk: String,
+	public static function decryptStringAsync(ciphertext: String, privateKeyJwk: String,
 		oaepHash: String = "sha256"): Promise<String> {
 		var data = Base64.decode(ciphertext);
-		return decrypt(data, privateKeyJwk, oaepHash)
+		return decryptAsync(data, privateKeyJwk, oaepHash)
 			.then(function(decrypted: Bytes): String {
 				return decrypted.toString();
 			});
