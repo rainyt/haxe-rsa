@@ -1,0 +1,6 @@
+# haxe-ras 编译配置 (C++ / hxcpp 目标)
+-cp src
+-cpp bin/cpp
+--macro include("haxe.ras", true)
+-D cpp.link-lib=ssl
+-D cpp.link-lib=crypto

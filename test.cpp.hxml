@@ -1,0 +1,8 @@
+# haxe-ras 测试配置 (C++ / hxcpp 目标)
+-cp src
+-cp test
+-cpp bin/test.cpp
+-main TestCpp
+-D cpp.link-lib=ssl
+-D cpp.link-lib=crypto
+--cmd bin/test.cpp/TestCpp

@@ -4,6 +4,8 @@ package haxe.ras;
 	typedef RSA = haxe.ras.backend.jsnode.RSA;
 #elseif (js && !nodejs)
 	typedef RSA = haxe.ras.backend.jsbrowser.RSA;
+#elseif cpp
+	typedef RSA = haxe.ras.backend.hxcpp.RSA;
 #else
-	#error "haxe-ras 当前版本仅支持 JS 目标（Node.js: -D nodejs，浏览器: 不定义 nodejs）。"
+	#error "haxe-ras 当前仅支持 JS（Node.js / 浏览器）和 C++（hxcpp）目标。"
 #end

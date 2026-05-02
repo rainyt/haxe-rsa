@@ -4,32 +4,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概述
 
-haxe-ras 是一个在 Haxe 中实现 RSA 加密的跨平台库。Haxe 可编译至 JS、Python、C++、Java、C#、PHP 等多种目标，核心挑战在于各平台密码学支持不一致。第一个版本可仅支持JS目标。
+haxe-ras 是一个在 Haxe 中实现 RSA 加密的跨平台库（OAEP 加密 + RSASSA-PKCS1-v1_5 签名）。目前已支持 JS（Node.js / 浏览器）和 C++（hxcpp）目标。
 
 ## 构建与测试
 
-- `haxe build.hxml` — 编译项目（默认目标）
-- `haxe build.<target>.hxml` — 编译特定目标平台（如 js.hxml、python.hxml、java.hxml）
-- `haxe test.hxml` — 运行测试
+- `haxe build.nodejs.hxml` — 编译 Node.js 库
+- `haxe build.js.hxml` — 编译浏览器库
+- `haxe build.cpp.hxml` — 编译 C++ 库
+- `haxe test.nodejs.hxml` — 运行 Node.js 测试
+- `haxe test.js.hxml` — 编译浏览器测试（在浏览器中打开 bin/index.html）
+- `arch -x86_64 haxe test.cpp.hxml` — 编译并运行 C++ 测试（macOS 需 Rosetta，因 Homebrew OpenSSL 为 x86_64）
 
-## 架构核心
+## 架构
 
-**跨平台策略**：通过 Haxe 条件编译（`#if js / #elseif python / ...`）为不同目标选择实现路径：
-- 有原生密码学支持的平台（Node.js crypto、Python pycrypto、Java security）优先绑定底层库
-- 无原生支持的平台使用 `haxe.crypto.BigInteger` 纯 Haxe 实现
+**桥接模式**：`RSA.hx` 通过条件编译 `typedef` 将 `RSA` 类型别名指向对应后端：
 
-**关键模块划分**：
-1. **大数运算层** — 统一接口封装 `BigInteger` 或平台原生大数（`java.math.BigInteger` 等）
-2. **密钥解析层** — PEM/DER 解码、Base64、ASN.1 解析，输出 `{n, e, d}` 结构
-3. **填充层** — PKCS#1 v1.5 或 RSA-OAEP，依赖安全随机数
-4. **随机数层** — 封装各平台安全随机源（`getSecureRandomBytes`）
-5. **RSA 核心** — 模幂运算 `m^e mod n`，公钥加密/私钥解密
+```
+#if (js && nodejs)        typedef RSA = haxe.ras.backend.jsnode.RSA
+#elseif (js && !nodejs)   typedef RSA = haxe.ras.backend.jsbrowser.RSA
+#elseif cpp               typedef RSA = haxe.ras.backend.hxcpp.RSA
+```
 
-**数据类型注意**：
-- Haxe 标准 `Int` 为 32/64 位，无法直接处理 2048 位 RSA 密钥
-- 密钥和运算结果使用 `String` 或 `Bytes` 传递，内部使用大整数类型
+**文件结构**：
+- `src/haxe/ras/KeyPair.hx` — 共享密钥对 typedef
+- `src/haxe/ras/RSA.hx` — 条件编译桥接
+- `src/haxe/ras/backend/jsnode/RSA.hx` — Node.js（crypto 模块，PEM 密钥，同步+异步）
+- `src/haxe/ras/backend/jsbrowser/RSA.hx` — 浏览器（Web Crypto API，JWK 密钥，全异步）
+- `src/haxe/ras/backend/hxcpp/RSA.hx` — C++（OpenSSL EVP API，PEM 密钥，同步）
 
-**安全要求**：
-- 填充必须使用真随机数（不可固定种子），生产环境禁用固定种子
-- 私钥不可硬编码或输出到日志
-- 大批量数据应使用混合加密（RSA 封装对称密钥）
+每个后端文件由目标平台的条件编译守卫包裹（`#if (js && nodejs)` 等），互不干扰。
+
+**关键设计**：
+- 密钥格式因平台而异：Node.js/C++ 使用 PEM，浏览器使用 JWK
+- C++ 后端通过 `@:headerCode` 内联 OpenSSL C 代码，通过 `untyped __cpp__` 桥接
+- C++ 后端在 macOS 上需 `arch -x86_64`（OpenSSL 仅提供 x86_64 dylib）
