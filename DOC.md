@@ -59,10 +59,8 @@ typedef KeyPair = {
 ```
 
 密钥格式随平台而异：
-- **Node.js / C++**：PEM 字符串，形如 `-----BEGIN PUBLIC KEY-----...`
-- **浏览器**：JWK JSON 字符串，形如 `{"kty":"RSA","n":"...","e":"..."}`
-
-同平台的密钥可互操作。跨平台需自行转换格式（如 PEM ↔ JWK）。
+- **Node.js / C++ / JVM**：PEM 字符串，形如 `-----BEGIN PUBLIC KEY-----...`
+- **浏览器**：支持 PEM 和 JWK JSON 字符串，自动识别格式
 
 ---
 
@@ -209,12 +207,9 @@ RSA.generateKeyPair().then(function(key) {
 
 ### 密钥跨平台
 
-密钥不可跨平台直接使用。如需跨平台，在导出密钥前先转换格式：
+PEM 格式密钥可在所有平台（Node.js / C++ / JVM / 浏览器）直接使用，无需转换。浏览器后端会自动识别 PEM 并转为 Web Crypto API 所需的 DER 格式导入。
 
-```haxe
-// Node.js → 浏览器：PEM → JWK（需自行实现或用第三方库）
-// 浏览器 → Node.js：JWK → PEM（同上）
-```
+JWK 格式密钥仅限浏览器端使用。如需在其他平台使用浏览器导出的 JWK，需先转换为 PEM。
 
 ---
 

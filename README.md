@@ -7,7 +7,7 @@ Haxe 跨平台 RSA 加密库 — 提供 OAEP 加密/解密与 RSASSA-PKCS1-v1_5 
 | 平台 | 目标标志 | 密码学后端 | 密钥格式 | 同步 | 异步 | 最低版本 |
 |------|----------|------------|----------|------|------|----------|
 | **Node.js** | `-D nodejs` | `require('crypto')` | PEM (SPKI/PKCS8) | 全部 | 全部 | Node.js 12+ |
-| **浏览器** | (默认 JS) | Web Crypto API (`SubtleCrypto`) | JWK | 不支持 | 全部 | Chrome 37 / Firefox 34 / Safari 11 |
+| **浏览器** | (默认 JS) | Web Crypto API (`SubtleCrypto`) | PEM / JWK（自动识别） | 不支持 | 全部 | Chrome 37 / Firefox 34 / Safari 11 |
 | **C++ (macOS)** | `-cpp` | OpenSSL 3.x (EVP API) | PEM (SPKI/PKCS8) | 全部 | 全部（Timer.delay） | macOS 10.9+ |
 | **C++ (Linux)** | `-cpp` | OpenSSL 3.x / 1.1.x (EVP API) | PEM (SPKI/PKCS8) | 全部 | 全部（Timer.delay） | glibc 2.17+ |
 | **C++ (Windows)** | `-cpp` | OpenSSL (EVP API) | PEM (SPKI/PKCS8) | 全部 | 全部（Timer.delay） | Windows 7+ |
