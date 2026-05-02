@@ -2,6 +2,8 @@ package haxe.ras;
 
 #if js
 private typedef NativePromiseData<T> = js.lib.Promise<T>;
+#elseif (cpp || sys)
+private typedef NativePromiseData<T> = haxe.ras.PromiseImpl<T>;
 #else
 private typedef NativePromiseData<T> = Dynamic;
 #end
@@ -9,8 +11,8 @@ private typedef NativePromiseData<T> = Dynamic;
 /**
  * 跨平台 Promise 类型
  *
- * JS 目标映射到 `js.lib.Promise<T>`，非 JS 目标映射到 `Dynamic`。
- * 非 JS 平台的异步方法会直接抛错，此类型仅用于统一接口签名。
+ * JS 目标映射到 `js.lib.Promise<T>`，C++/sys 目标映射到 `PromiseImpl<T>`。
+ * 其他非 JS 平台的异步方法会直接抛错，此类型仅用于统一接口签名。
  */
 abstract NativePromise<T>(NativePromiseData<T>) {
 	@:from
@@ -31,6 +33,16 @@ abstract NativePromise<T>(NativePromiseData<T>) {
 
 	public function catchError(onRejected: Dynamic -> Void): NativePromise<T> {
 		var p: js.lib.Promise<T> = cast this;
+		return cast p.catchError(onRejected);
+	}
+	#elseif (cpp || sys)
+	public function then<S>(onResolved: T -> S, ?onRejected: Dynamic -> S): NativePromise<S> {
+		var p: haxe.ras.PromiseImpl<T> = cast this;
+		return cast p.then(onResolved, onRejected);
+	}
+
+	public function catchError(onRejected: Dynamic -> Void): NativePromise<T> {
+		var p: haxe.ras.PromiseImpl<T> = cast this;
 		return cast p.catchError(onRejected);
 	}
 	#end

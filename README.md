@@ -1,16 +1,20 @@
-# haxe-rsa
+# haxe-ras
 
 Haxe 跨平台 RSA 加密库 — 提供 OAEP 加密/解密与 RSASSA-PKCS1-v1_5 签名/验签。
 
 ## 支持平台
 
-| 平台 | 目标标志 | 密码学后端 | 密钥格式 | 最低版本 |
-|------|----------|------------|----------|----------|
-| **Node.js** | `-D nodejs` | `require('crypto')` | PEM (SPKI/PKCS8) | Node.js 12+ |
-| **浏览器** | (默认 JS) | Web Crypto API (`SubtleCrypto`) | JWK | Chrome 37 / Firefox 34 / Safari 11 / Edge 79 |
-| **C++ (macOS)** | `-cpp` | OpenSSL 3.x (EVP API) | PEM (SPKI/PKCS8) | macOS 10.9+ |
-| **C++ (Linux)** | `-cpp` | OpenSSL 3.x / 1.1.x (EVP API) | PEM (SPKI/PKCS8) | glibc 2.17+ |
-| **C++ (Windows)** | `-cpp` | OpenSSL (EVP API) | PEM (SPKI/PKCS8) | Windows 7+ |
+| 平台 | 目标标志 | 密码学后端 | 密钥格式 | 同步 | 异步 | 最低版本 |
+|------|----------|------------|----------|------|------|----------|
+| **Node.js** | `-D nodejs` | `require('crypto')` | PEM (SPKI/PKCS8) | 全部 | 全部 | Node.js 12+ |
+| **浏览器** | (默认 JS) | Web Crypto API (`SubtleCrypto`) | JWK | 不支持 | 全部 | Chrome 37 / Firefox 34 / Safari 11 |
+| **C++ (macOS)** | `-cpp` | OpenSSL 3.x (EVP API) | PEM (SPKI/PKCS8) | 全部 | 全部（Timer.delay） | macOS 10.9+ |
+| **C++ (Linux)** | `-cpp` | OpenSSL 3.x / 1.1.x (EVP API) | PEM (SPKI/PKCS8) | 全部 | 全部（Timer.delay） | glibc 2.17+ |
+| **C++ (Windows)** | `-cpp` | OpenSSL (EVP API) | PEM (SPKI/PKCS8) | 全部 | 全部（Timer.delay） | Windows 7+ |
+
+### C++ 异步说明
+
+C++ 目标的异步方法基于 `haxe.Timer.delay(fn, 0)` 延迟执行，回调在程序事件循环中自动触发。`Timer` 内部引用 `MainLoop`，hxcpp 会在 `main()` 末尾自动注入 `EntryPoint.run()`，确保异步回调在进程退出前执行。
 
 ### C++ 目标详细说明
 
@@ -70,30 +74,77 @@ haxelib install haxe-ras
 
 ## API
 
-所有平台的静态方法签名一致，仅同步/异步语义不同（Node.js 提供同步方法，浏览器返回 Promise，C++ 为同步）。
+所有后端实现统一 `IRSA` 接口，通过实例方法调用。不支持的方法会直接抛错（如浏览器不支持同步，C++ 异步已实现）。
+
+### 同步接口
 
 ```haxe
+var rsa = new RSA();
+
 // ---- 密钥生成 ----
-RSA.generateKeyPair();              // → KeyPair {publicKey: String, privateKey: String}
+var keyPair = rsa.generateKeyPair();   // → KeyPair {publicKey: String, privateKey: String}
 
 // ---- OAEP 加密/解密 ----
-RSA.encryptString("hello", pubKey); // → 加密后的 Base64 密文
-RSA.decryptString(cipher, privKey); // → 原始明文
+rsa.encryptString("hello", pubKey);    // → 加密后的 Base64 密文
+rsa.decryptString(cipher, privKey);    // → 原始明文
+
+rsa.encrypt(bytes, pubKey);            // → Bytes 密文
+rsa.decrypt(encryptedBytes, privKey);  // → Bytes 明文
 
 // ---- 签名/验签 (RSASSA-PKCS1-v1_5) ----
-RSA.sign(data, privKey);            // → Bytes 签名
-RSA.verify(data, sig, pubKey);      // → Bool
+rsa.sign(data, privKey);               // → Bytes 签名
+rsa.verify(data, sig, pubKey);         // → Bool
 
 // ---- 自定义哈希 ----
-RSA.sign(data, privKey, "sha512");
-RSA.encrypt(data, pubKey, "sha1");
+rsa.sign(data, privKey, "sha512");
+rsa.encrypt(data, pubKey, "sha1");
 ```
+
+### 异步接口
+
+Node.js、浏览器、C++ 三平台均支持异步 Promise 调用：
+
+```haxe
+var rsa = new RSA();
+
+// 链式调用
+rsa.generateKeyPairAsync(2048).then(function(keyPair) {
+    return rsa.encryptStringAsync("Hello", keyPair.publicKey);
+}).then(function(encrypted) {
+    trace("加密完成: " + encrypted);
+    return rsa.decryptStringAsync(encrypted, keyPair.privateKey);
+}).then(function(decrypted) {
+    trace("解密完成: " + decrypted);
+}).catchError(function(err) {
+    trace("错误: " + err);
+});
+
+// 异步签名/验签
+rsa.signAsync(data, privKey).then(function(sig) {
+    return rsa.verifyAsync(data, sig, pubKey);
+}).then(function(ok) {
+    trace("验签: " + ok);
+});
+```
+
+| 方法（同步） | 方法（异步） | 说明 |
+|-------------|-------------|------|
+| `generateKeyPair()` | `generateKeyPairAsync()` | 生成密钥对 |
+| `encrypt()` | `encryptAsync()` | OAEP 公钥加密 Bytes |
+| `decrypt()` | `decryptAsync()` | OAEP 私钥解密 Bytes |
+| `sign()` | `signAsync()` | RSASSA-PKCS1-v1_5 签名 |
+| `verify()` | `verifyAsync()` | RSASSA-PKCS1-v1_5 验签 |
+| `encryptString()` | `encryptStringAsync()` | OAEP 字符串加密（Base64 输出） |
+| `decryptString()` | `decryptStringAsync()` | OAEP 字符串解密（Base64 输入） |
 
 ## 架构
 
 ```
 src/haxe/ras/
 ├── KeyPair.hx                        # 共享密钥对 typedef
+├── IRSA.hx                           # 统一接口定义
+├── NativePromise.hx                  # 跨平台 Promise 抽象类型
+├── PromiseImpl.hx                    # 非 JS 平台的 Promise 实现
 ├── RSA.hx                            # 条件编译桥接 (typedef RSA = ...)
 └── backend/
     ├── jsnode/RSA.hx                 # Node.js 实现

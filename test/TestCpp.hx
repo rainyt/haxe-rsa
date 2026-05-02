@@ -78,14 +78,36 @@ class TestCpp {
 			Sys.println("[FAIL] SHA512签名/验签失败!");
 		}
 
-		// 测试异步方法抛错
-		try {
-			rsa.encryptAsync(dataBytes, keyPair.publicKey);
-			Sys.println("[FAIL] 异步方法应该抛错但未抛出!");
-		} catch (e: Dynamic) {
-			Sys.println("[OK] 异步方法正确抛错: " + e);
-		}
+		// 测试异步加密/解密链式调用
+		var asyncRsa = new RSA();
+		var asyncKeyPair = asyncRsa.generateKeyPair(2048);
 
-		Sys.println("=== 测试完成 ===");
+		asyncRsa.encryptStringAsync(plainText, asyncKeyPair.publicKey).then(function(encrypted: String) {
+			Sys.println('[OK] 异步加密成功: ${encrypted.substring(0, 40)}...');
+			asyncRsa.decryptStringAsync(encrypted, asyncKeyPair.privateKey).then(function(decrypted: String) {
+				if (decrypted == plainText) {
+					Sys.println("[OK] 异步解密验证通过 (OAEP)");
+				} else {
+					Sys.println("[FAIL] 异步解密结果不匹配!");
+				}
+				asyncRsa.signAsync(dataBytes, asyncKeyPair.privateKey).then(function(asyncSig: Bytes) {
+					asyncRsa.verifyAsync(dataBytes, asyncSig, asyncKeyPair.publicKey).then(function(asyncVerified: Bool) {
+						if (asyncVerified) {
+							Sys.println("[OK] 异步签名/验签通过");
+						} else {
+							Sys.println("[FAIL] 异步验签失败!");
+						}
+						Sys.println("=== 测试完成 ===");
+					});
+				});
+			});
+			return cast null;
+		}).catchError(function(err: Dynamic) {
+			Sys.println("[FAIL] 异步错误: " + err);
+			Sys.println("=== 测试完成 ===");
+			return cast null;
+		});
+
+		Sys.println("[INFO] 异步任务已提交，等待回调...");
 	}
 }
