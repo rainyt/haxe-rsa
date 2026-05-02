@@ -1,0 +1,8 @@
+# haxe-ras 测试配置 (Node.js 目标)
+-cp src
+-cp test
+-lib hxnodejs
+-D nodejs
+-js bin/test.nodejs.js
+-main TestNode
+-cmd node bin/test.nodejs.js

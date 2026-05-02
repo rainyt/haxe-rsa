@@ -1,6 +1,4 @@
-# haxe-ras 编译配置 (Node.js 目标)
+# haxe-ras 编译配置 (浏览器/纯JS 目标)
 -cp src
--lib hxnodejs
--D nodejs
--js bin/ras.js
+-js bin/ras.browser.js
 --macro include("haxe.ras", true)

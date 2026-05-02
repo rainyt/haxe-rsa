@@ -1,8 +1,6 @@
-# haxe-ras 测试配置
+# haxe-ras 测试配置 (浏览器/纯JS 目标)
 -cp src
 -cp test
--lib hxnodejs
--D nodejs
--js bin/test.js
--main Test
--cmd node bin/test.js
+-js bin/test.browser.js
+-main TestBrowser
+--cmd cp index.html bin/index.html

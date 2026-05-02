@@ -1,7 +1,7 @@
 import haxe.ras.RSA;
 import js.node.Buffer;
 
-class Test {
+class TestNode {
 	static function main() {
 		Sys.println("=== haxe-ras 测试 ===");
 
