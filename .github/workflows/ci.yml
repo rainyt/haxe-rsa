@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Haxe 4.3.7
+        uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: "4.3.7"
+
+      - name: 安装 hxnodejs 依赖
+        run: haxelib install hxnodejs
+
+      - name: 注册 haxe-rsa 开发库
+        run: haxelib dev haxe-rsa .
+
+      - name: 测试密钥生成
+        run: haxelib run haxe-rsa create
