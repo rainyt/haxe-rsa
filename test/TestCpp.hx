@@ -78,6 +78,44 @@ class TestCpp {
 			Sys.println("[FAIL] SHA512签名/验签失败!");
 		}
 
+		// ---- 固定密钥跨平台验证 ----
+		Sys.println("--- 固定密钥测试（PEM 格式，验证跨后端一致性） ---");
+
+		var sharedPlain = "跨平台共享密钥测试 - Cross-platform shared key test";
+		var sharedEncrypted = rsa.encryptString(sharedPlain, TestKeys.publicKeyPem);
+		var sharedDecrypted = rsa.decryptString(sharedEncrypted, TestKeys.privateKeyPem);
+		if (sharedDecrypted == sharedPlain) {
+			Sys.println("[OK] 固定密钥解密验证通过 (OAEP)");
+		} else {
+			Sys.println("[FAIL] 固定密钥解密结果不匹配!");
+		}
+
+		// 固定密钥 - Bytes 级别
+		var sharedData = Bytes.ofString(sharedPlain);
+		var sharedEncBytes = rsa.encrypt(sharedData, TestKeys.publicKeyPem);
+		var sharedDecBytes = rsa.decrypt(sharedEncBytes, TestKeys.privateKeyPem);
+		if (sharedDecBytes.toString() == sharedPlain) {
+			Sys.println("[OK] 固定密钥 Bytes 加密/解密验证通过");
+		} else {
+			Sys.println("[FAIL] 固定密钥 Bytes 加密/解密失败!");
+		}
+
+		// 固定密钥 - 签名/验签
+		var sharedSig = rsa.sign(sharedData, TestKeys.privateKeyPem);
+		if (rsa.verify(sharedData, sharedSig, TestKeys.publicKeyPem)) {
+			Sys.println("[OK] 固定密钥签名/验签验证通过");
+		} else {
+			Sys.println("[FAIL] 固定密钥验签失败!");
+		}
+
+		// 固定密钥 - SHA-512 签名
+		var sharedSig512 = rsa.sign(sharedData, TestKeys.privateKeyPem, "sha512");
+		if (rsa.verify(sharedData, sharedSig512, TestKeys.publicKeyPem, "sha512")) {
+			Sys.println("[OK] 固定密钥 SHA512 签名/验签通过");
+		} else {
+			Sys.println("[FAIL] 固定密钥 SHA512 签名/验签失败!");
+		}
+
 		// 测试异步加密/解密链式调用
 		var asyncRsa = new RSA();
 		var asyncKeyPair = asyncRsa.generateKeyPair(2048);
