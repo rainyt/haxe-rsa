@@ -20,6 +20,24 @@ Std.parseInt = function(x) {
 	}
 	return v;
 };
+var Sys = function() { };
+Sys.__name__ = true;
+Sys.systemName = function() {
+	var _g = process.platform;
+	switch(_g) {
+	case "darwin":
+		return "Mac";
+	case "freebsd":
+		return "BSD";
+	case "linux":
+		return "Linux";
+	case "win32":
+		return "Windows";
+	default:
+		var other = _g;
+		return other;
+	}
+};
 var haxe_io_Output = function() { };
 haxe_io_Output.__name__ = true;
 var _$Sys_FileOutput = function(fd) {
@@ -374,12 +392,58 @@ haxe_ras_cli_Main.main = function() {
 		process.stdout.write("运行 \"haxelib run haxe-ras --help\" 查看用法。");
 		process.stdout.write("\n");
 		process.exit(1);
-	} else if(cmd == "create") {
-		haxe_ras_cli_Main.cmdCreate(args);
 	} else {
-		process.stdout.write(Std.string("未知命令: " + cmd));
+		switch(cmd) {
+		case "create":
+			haxe_ras_cli_Main.cmdCreate(args);
+			break;
+		case "init":
+			haxe_ras_cli_Main.cmdInit(args);
+			break;
+		default:
+			process.stdout.write(Std.string("未知命令: " + cmd));
+			process.stdout.write("\n");
+			process.stdout.write("运行 \"haxelib run haxe-ras --help\" 查看用法。");
+			process.stdout.write("\n");
+			process.exit(1);
+		}
+	}
+};
+haxe_ras_cli_Main.cmdInit = function(args) {
+	var npmCmd = Sys.systemName() == "Windows" ? "npm.cmd" : "npm";
+	var nullRedirect = Sys.systemName() == "Windows" ? "> NUL 2>&1" : "> /dev/null 2>&1";
+	var cmd = npmCmd + " --version " + nullRedirect;
+	var args = null;
+	var npmCheck = args == null ? js_node_ChildProcess.spawnSync(cmd,{ shell : true, stdio : "inherit"}).status : js_node_ChildProcess.spawnSync(cmd,args,{ stdio : "inherit"}).status;
+	if(npmCheck != 0) {
+		process.stdout.write("错误: 未检测到 npm。请先安装 Node.js (包含 npm):");
 		process.stdout.write("\n");
-		process.stdout.write("运行 \"haxelib run haxe-ras --help\" 查看用法。");
+		process.stdout.write("  https://nodejs.org/");
+		process.stdout.write("\n");
+		process.exit(1);
+	}
+	process.stdout.write("检测到 npm，正在初始化项目...");
+	process.stdout.write("\n");
+	var cwd = process.cwd();
+	var pkgPath = cwd + "/package.json";
+	if(!sys_FileSystem.exists(pkgPath)) {
+		process.stdout.write("创建 package.json...");
+		process.stdout.write("\n");
+		var pkg = "{\n  \"name\": \"haxe-ras-project\",\n  \"version\": \"1.0.0\",\n  \"private\": true\n}";
+		js_node_Fs.writeFileSync(pkgPath,pkg);
+	} else {
+		process.stdout.write("package.json 已存在");
+		process.stdout.write("\n");
+	}
+	process.stdout.write("运行 npm install...");
+	process.stdout.write("\n");
+	var args = ["install"];
+	var exitCode = args == null ? js_node_ChildProcess.spawnSync(npmCmd,{ shell : true, stdio : "inherit"}).status : js_node_ChildProcess.spawnSync(npmCmd,args,{ stdio : "inherit"}).status;
+	if(exitCode == 0) {
+		process.stdout.write("初始化完成。");
+		process.stdout.write("\n");
+	} else {
+		process.stdout.write(Std.string("npm install 失败，退出码: " + exitCode));
 		process.stdout.write("\n");
 		process.exit(1);
 	}
@@ -449,6 +513,8 @@ haxe_ras_cli_Main.printHelp = function() {
 	process.stdout.write("\n");
 	process.stdout.write("  create       生成 RSA 密钥对");
 	process.stdout.write("\n");
+	process.stdout.write("  init         初始化项目环境（检测 npm 并安装依赖）");
+	process.stdout.write("\n");
 	process.stdout.write("");
 	process.stdout.write("\n");
 	process.stdout.write("create 选项:");
@@ -461,11 +527,13 @@ haxe_ras_cli_Main.printHelp = function() {
 	process.stdout.write("\n");
 	process.stdout.write("示例:");
 	process.stdout.write("\n");
-	process.stdout.write("  haxelib run haxe-ras create                    # 输出到标准输出");
+	process.stdout.write("  haxelib run haxe-ras init                       # 初始化项目");
 	process.stdout.write("\n");
-	process.stdout.write("  haxelib run haxe-ras create --bits 4096        # 4096 位密钥");
+	process.stdout.write("  haxelib run haxe-ras create                     # 输出到标准输出");
 	process.stdout.write("\n");
-	process.stdout.write("  haxelib run haxe-ras create -o ./keys/mykey   # 保存到文件");
+	process.stdout.write("  haxelib run haxe-ras create --bits 4096         # 4096 位密钥");
+	process.stdout.write("\n");
+	process.stdout.write("  haxelib run haxe-ras create -o ./keys/mykey    # 保存到文件");
 	process.stdout.write("\n");
 };
 var js_Boot = function() { };
@@ -562,6 +630,7 @@ js_Boot.__string_rec = function(o,s) {
 		return String(o);
 	}
 };
+var js_node_ChildProcess = require("child_process");
 var js_node_Constants = require("constants");
 var js_node_Crypto = require("crypto");
 var js_node_Fs = require("fs");
@@ -591,6 +660,16 @@ js_node_url_URLSearchParamsEntry.get_name = function(this1) {
 };
 js_node_url_URLSearchParamsEntry.get_value = function(this1) {
 	return this1[1];
+};
+var sys_FileSystem = function() { };
+sys_FileSystem.__name__ = true;
+sys_FileSystem.exists = function(path) {
+	try {
+		js_node_Fs.accessSync(path);
+		return true;
+	} catch( _g ) {
+		return false;
+	}
 };
 var sys_io_FileInput = function(fd) {
 	this.fd = fd;
