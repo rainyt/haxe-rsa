@@ -1,3 +1,4 @@
-bin/
+/bin/*
+!/bin/cli.js
 .claude/
 .DS_Store
