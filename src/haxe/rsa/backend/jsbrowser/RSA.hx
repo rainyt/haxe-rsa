@@ -1,12 +1,12 @@
-package haxe.ras.backend.jsbrowser;
+package haxe.rsa.backend.jsbrowser;
 
 #if (js && !nodejs)
 
 import haxe.io.Bytes;
 import haxe.crypto.Base64;
-import haxe.ras.KeyPair;
-import haxe.ras.IRSA;
-import haxe.ras.NativePromise;
+import haxe.rsa.KeyPair;
+import haxe.rsa.IRSA;
+import haxe.rsa.NativePromise;
 
 /**
  * RSA 浏览器后端 — 基于 Web Crypto API (SubtleCrypto)

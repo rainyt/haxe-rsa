@@ -1,6 +1,6 @@
-package haxe.ras.cli;
+package haxe.rsa.cli;
 
-import haxe.ras.RSA;
+import haxe.rsa.RSA;
 import sys.io.File;
 import sys.FileSystem;
 

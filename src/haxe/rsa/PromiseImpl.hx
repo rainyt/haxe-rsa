@@ -1,4 +1,4 @@
-package haxe.ras;
+package haxe.rsa;
 
 #if (cpp || sys || jvm)
 

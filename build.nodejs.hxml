@@ -3,4 +3,4 @@
 -lib hxnodejs
 -D nodejs
 -js bin/ras.nodejs.js
---macro include("haxe.ras", true)
+--macro include("haxe.rsa", true)

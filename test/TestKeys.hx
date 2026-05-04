@@ -1,6 +1,6 @@
 package;
 
-import haxe.ras.KeyPair;
+import haxe.rsa.KeyPair;
 
 /**
  * 跨后端共享的测试密钥对（2048 位 RSA）。

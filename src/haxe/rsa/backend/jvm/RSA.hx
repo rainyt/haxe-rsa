@@ -1,12 +1,12 @@
-package haxe.ras.backend.jvm;
+package haxe.rsa.backend.jvm;
 
 #if jvm
 
 import haxe.io.Bytes;
 import haxe.crypto.Base64;
-import haxe.ras.KeyPair;
-import haxe.ras.IRSA;
-import haxe.ras.NativePromise;
+import haxe.rsa.KeyPair;
+import haxe.rsa.IRSA;
+import haxe.rsa.NativePromise;
 
 // ---- Java 加密相关外部类 ----
 
@@ -212,63 +212,63 @@ class RSA implements IRSA {
 
 	public function generateKeyPairAsync(modulusLength:Int = 2048):NativePromise<KeyPair> {
 		try {
-			return cast haxe.ras.PromiseImpl.resolve(generateKeyPair(modulusLength));
+			return cast haxe.rsa.PromiseImpl.resolve(generateKeyPair(modulusLength));
 		} catch (e:Dynamic) {
-			return cast haxe.ras.PromiseImpl.reject(e);
+			return cast haxe.rsa.PromiseImpl.reject(e);
 		}
 	}
 
 	public function encryptAsync(data:Bytes, publicKey:String,
 			oaepHash:String = "sha256"):NativePromise<Bytes> {
 		try {
-			return cast haxe.ras.PromiseImpl.resolve(encrypt(data, publicKey, oaepHash));
+			return cast haxe.rsa.PromiseImpl.resolve(encrypt(data, publicKey, oaepHash));
 		} catch (e:Dynamic) {
-			return cast haxe.ras.PromiseImpl.reject(e);
+			return cast haxe.rsa.PromiseImpl.reject(e);
 		}
 	}
 
 	public function decryptAsync(data:Bytes, privateKey:String,
 			oaepHash:String = "sha256"):NativePromise<Bytes> {
 		try {
-			return cast haxe.ras.PromiseImpl.resolve(decrypt(data, privateKey, oaepHash));
+			return cast haxe.rsa.PromiseImpl.resolve(decrypt(data, privateKey, oaepHash));
 		} catch (e:Dynamic) {
-			return cast haxe.ras.PromiseImpl.reject(e);
+			return cast haxe.rsa.PromiseImpl.reject(e);
 		}
 	}
 
 	public function signAsync(data:Bytes, privateKey:String,
 			algorithm:String = "sha256"):NativePromise<Bytes> {
 		try {
-			return cast haxe.ras.PromiseImpl.resolve(sign(data, privateKey, algorithm));
+			return cast haxe.rsa.PromiseImpl.resolve(sign(data, privateKey, algorithm));
 		} catch (e:Dynamic) {
-			return cast haxe.ras.PromiseImpl.reject(e);
+			return cast haxe.rsa.PromiseImpl.reject(e);
 		}
 	}
 
 	public function verifyAsync(data:Bytes, signature:Bytes, publicKey:String,
 			algorithm:String = "sha256"):NativePromise<Bool> {
 		try {
-			return cast haxe.ras.PromiseImpl.resolve(verify(data, signature, publicKey, algorithm));
+			return cast haxe.rsa.PromiseImpl.resolve(verify(data, signature, publicKey, algorithm));
 		} catch (e:Dynamic) {
-			return cast haxe.ras.PromiseImpl.reject(e);
+			return cast haxe.rsa.PromiseImpl.reject(e);
 		}
 	}
 
 	public function encryptStringAsync(plaintext:String, publicKey:String,
 			oaepHash:String = "sha256"):NativePromise<String> {
 		try {
-			return cast haxe.ras.PromiseImpl.resolve(encryptString(plaintext, publicKey, oaepHash));
+			return cast haxe.rsa.PromiseImpl.resolve(encryptString(plaintext, publicKey, oaepHash));
 		} catch (e:Dynamic) {
-			return cast haxe.ras.PromiseImpl.reject(e);
+			return cast haxe.rsa.PromiseImpl.reject(e);
 		}
 	}
 
 	public function decryptStringAsync(ciphertext:String, privateKey:String,
 			oaepHash:String = "sha256"):NativePromise<String> {
 		try {
-			return cast haxe.ras.PromiseImpl.resolve(decryptString(ciphertext, privateKey, oaepHash));
+			return cast haxe.rsa.PromiseImpl.resolve(decryptString(ciphertext, privateKey, oaepHash));
 		} catch (e:Dynamic) {
-			return cast haxe.ras.PromiseImpl.reject(e);
+			return cast haxe.rsa.PromiseImpl.reject(e);
 		}
 	}
 }

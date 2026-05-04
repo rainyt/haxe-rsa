@@ -1,4 +1,4 @@
 # haxe-ras 编译配置 (浏览器/纯JS 目标)
 -cp src
 -js bin/ras.browser.js
---macro include("haxe.ras", true)
+--macro include("haxe.rsa", true)

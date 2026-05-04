@@ -1,5 +1,5 @@
 -cp src
 -lib hxnodejs
--main haxe.ras.cli.Main
+-main haxe.rsa.cli.Main
 -js bin/cli.js
 -D nodejs

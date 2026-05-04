@@ -1,4 +1,4 @@
-import haxe.ras.RSA;
+import haxe.rsa.RSA;
 import haxe.io.Bytes;
 
 class TestJvm {

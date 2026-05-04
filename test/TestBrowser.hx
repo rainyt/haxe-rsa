@@ -1,5 +1,5 @@
-import haxe.ras.RSA;
-import haxe.ras.KeyPair;
+import haxe.rsa.RSA;
+import haxe.rsa.KeyPair;
 import haxe.io.Bytes;
 
 class TestBrowser {

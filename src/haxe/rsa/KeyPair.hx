@@ -1,4 +1,4 @@
-package haxe.ras;
+package haxe.rsa;
 
 /**
  * RSA密钥对

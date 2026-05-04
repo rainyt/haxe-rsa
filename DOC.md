@@ -17,7 +17,7 @@
 ## 快速开始
 
 ```haxe
-import haxe.ras.RSA;
+import haxe.rsa.RSA;
 
 // 1. 生成密钥对
 var key = RSA.generateKeyPair(2048);

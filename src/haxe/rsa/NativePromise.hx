@@ -1,9 +1,9 @@
-package haxe.ras;
+package haxe.rsa;
 
 #if js
 private typedef NativePromiseData<T> = js.lib.Promise<T>;
 #elseif (cpp || sys || jvm)
-private typedef NativePromiseData<T> = haxe.ras.PromiseImpl<T>;
+private typedef NativePromiseData<T> = haxe.rsa.PromiseImpl<T>;
 #else
 private typedef NativePromiseData<T> = Dynamic;
 #end
@@ -37,12 +37,12 @@ abstract NativePromise<T>(NativePromiseData<T>) {
 	}
 	#elseif (cpp || sys || java)
 	public function then<S>(onResolved: T -> S, ?onRejected: Dynamic -> S): NativePromise<S> {
-		var p: haxe.ras.PromiseImpl<T> = cast this;
+		var p: haxe.rsa.PromiseImpl<T> = cast this;
 		return cast p.then(onResolved, onRejected);
 	}
 
 	public function catchError(onRejected: Dynamic -> Void): NativePromise<T> {
-		var p: haxe.ras.PromiseImpl<T> = cast this;
+		var p: haxe.rsa.PromiseImpl<T> = cast this;
 		return cast p.catchError(onRejected);
 	}
 	#end

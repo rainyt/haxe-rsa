@@ -22,19 +22,19 @@ haxe-ras 是一个在 Haxe 中实现 RSA 加密的跨平台库（OAEP 加密 + R
 **桥接模式**：`RSA.hx` 通过条件编译 `typedef` 将 `RSA` 类型别名指向对应后端：
 
 ```
-#if (js && nodejs)        typedef RSA = haxe.ras.backend.jsnode.RSA
-#elseif (js && !nodejs)   typedef RSA = haxe.ras.backend.jsbrowser.RSA
-#elseif cpp               typedef RSA = haxe.ras.backend.hxcpp.RSA
-#elseif jvm               typedef RSA = haxe.ras.backend.jvm.RSA
+#if (js && nodejs)        typedef RSA = haxe.rsa.backend.jsnode.RSA
+#elseif (js && !nodejs)   typedef RSA = haxe.rsa.backend.jsbrowser.RSA
+#elseif cpp               typedef RSA = haxe.rsa.backend.hxcpp.RSA
+#elseif jvm               typedef RSA = haxe.rsa.backend.jvm.RSA
 ```
 
 **文件结构**：
-- `src/haxe/ras/KeyPair.hx` — 共享密钥对 typedef
-- `src/haxe/ras/RSA.hx` — 条件编译桥接
-- `src/haxe/ras/backend/jsnode/RSA.hx` — Node.js（crypto 模块，PEM 密钥，同步+异步）
-- `src/haxe/ras/backend/jsbrowser/RSA.hx` — 浏览器（Web Crypto API，JWK 密钥，全异步）
-- `src/haxe/ras/backend/hxcpp/RSA.hx` — C++（OpenSSL EVP API，PEM 密钥，同步）
-- `src/haxe/ras/backend/jvm/RSA.hx` — JVM（JDK java.security / javax.crypto，PEM 密钥，同步+异步）
+- `src/haxe/rsa/KeyPair.hx` — 共享密钥对 typedef
+- `src/haxe/rsa/RSA.hx` — 条件编译桥接
+- `src/haxe/rsa/backend/jsnode/RSA.hx` — Node.js（crypto 模块，PEM 密钥，同步+异步）
+- `src/haxe/rsa/backend/jsbrowser/RSA.hx` — 浏览器（Web Crypto API，JWK 密钥，全异步）
+- `src/haxe/rsa/backend/hxcpp/RSA.hx` — C++（OpenSSL EVP API，PEM 密钥，同步）
+- `src/haxe/rsa/backend/jvm/RSA.hx` — JVM（JDK java.security / javax.crypto，PEM 密钥，同步+异步）
 
 每个后端文件由目标平台的条件编译守卫包裹（`#if (js && nodejs)` 等），互不干扰。
 

@@ -1,4 +1,4 @@
-package haxe.ras;
+package haxe.rsa;
 
 import haxe.io.Bytes;
 

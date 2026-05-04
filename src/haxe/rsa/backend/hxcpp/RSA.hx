@@ -1,10 +1,10 @@
-package haxe.ras.backend.hxcpp;
+package haxe.rsa.backend.hxcpp;
 
 import haxe.io.Bytes;
 import haxe.crypto.Base64;
-import haxe.ras.KeyPair;
-import haxe.ras.IRSA;
-import haxe.ras.NativePromise;
+import haxe.rsa.KeyPair;
+import haxe.rsa.IRSA;
+import haxe.rsa.NativePromise;
 
 #if cpp
 
@@ -238,7 +238,7 @@ class RSA implements IRSA {
 
 	public function generateKeyPairAsync(modulusLength: Int = 2048): NativePromise<KeyPair> {
 		var self = this;
-		return cast new haxe.ras.PromiseImpl(function(resolve, reject) {
+		return cast new haxe.rsa.PromiseImpl(function(resolve, reject) {
 			haxe.Timer.delay(function() {
 				try { resolve(self.generateKeyPair(modulusLength)); }
 				catch (e: Dynamic) { reject(e); }
@@ -249,7 +249,7 @@ class RSA implements IRSA {
 	public function encryptAsync(data: Bytes, publicKey: String,
 			oaepHash: String = "sha256"): NativePromise<Bytes> {
 		var self = this;
-		return cast new haxe.ras.PromiseImpl(function(resolve, reject) {
+		return cast new haxe.rsa.PromiseImpl(function(resolve, reject) {
 			haxe.Timer.delay(function() {
 				try { resolve(self.encrypt(data, publicKey, oaepHash)); }
 				catch (e: Dynamic) { reject(e); }
@@ -260,7 +260,7 @@ class RSA implements IRSA {
 	public function decryptAsync(data: Bytes, privateKey: String,
 			oaepHash: String = "sha256"): NativePromise<Bytes> {
 		var self = this;
-		return cast new haxe.ras.PromiseImpl(function(resolve, reject) {
+		return cast new haxe.rsa.PromiseImpl(function(resolve, reject) {
 			haxe.Timer.delay(function() {
 				try { resolve(self.decrypt(data, privateKey, oaepHash)); }
 				catch (e: Dynamic) { reject(e); }
@@ -271,7 +271,7 @@ class RSA implements IRSA {
 	public function signAsync(data: Bytes, privateKey: String,
 			algorithm: String = "sha256"): NativePromise<Bytes> {
 		var self = this;
-		return cast new haxe.ras.PromiseImpl(function(resolve, reject) {
+		return cast new haxe.rsa.PromiseImpl(function(resolve, reject) {
 			haxe.Timer.delay(function() {
 				try { resolve(self.sign(data, privateKey, algorithm)); }
 				catch (e: Dynamic) { reject(e); }
@@ -282,7 +282,7 @@ class RSA implements IRSA {
 	public function verifyAsync(data: Bytes, signature: Bytes, publicKey: String,
 			algorithm: String = "sha256"): NativePromise<Bool> {
 		var self = this;
-		return cast new haxe.ras.PromiseImpl(function(resolve, reject) {
+		return cast new haxe.rsa.PromiseImpl(function(resolve, reject) {
 			haxe.Timer.delay(function() {
 				try { resolve(self.verify(data, signature, publicKey, algorithm)); }
 				catch (e: Dynamic) { reject(e); }
@@ -293,7 +293,7 @@ class RSA implements IRSA {
 	public function encryptStringAsync(plaintext: String, publicKey: String,
 			oaepHash: String = "sha256"): NativePromise<String> {
 		var self = this;
-		return cast new haxe.ras.PromiseImpl(function(resolve, reject) {
+		return cast new haxe.rsa.PromiseImpl(function(resolve, reject) {
 			haxe.Timer.delay(function() {
 				try { resolve(self.encryptString(plaintext, publicKey, oaepHash)); }
 				catch (e: Dynamic) { reject(e); }
@@ -304,7 +304,7 @@ class RSA implements IRSA {
 	public function decryptStringAsync(ciphertext: String, privateKey: String,
 			oaepHash: String = "sha256"): NativePromise<String> {
 		var self = this;
-		return cast new haxe.ras.PromiseImpl(function(resolve, reject) {
+		return cast new haxe.rsa.PromiseImpl(function(resolve, reject) {
 			haxe.Timer.delay(function() {
 				try { resolve(self.decryptString(ciphertext, privateKey, oaepHash)); }
 				catch (e: Dynamic) { reject(e); }

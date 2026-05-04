@@ -1,4 +1,4 @@
-package haxe.ras.backend.jsnode;
+package haxe.rsa.backend.jsnode;
 
 #if (js && nodejs)
 
@@ -7,9 +7,9 @@ import js.node.Constants;
 import js.node.Buffer;
 import js.lib.Promise;
 import haxe.io.Bytes;
-import haxe.ras.KeyPair;
-import haxe.ras.IRSA;
-import haxe.ras.NativePromise;
+import haxe.rsa.KeyPair;
+import haxe.rsa.IRSA;
+import haxe.rsa.NativePromise;
 
 /**
  * RSA Node.js 后端 — 基于 Node.js crypto 模块
